@@ -4,10 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Project;
+use App\Models\Task;
 use Illuminate\Support\Facades\Validator;
 
-class ProjectController extends Controller
+class TaskController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,8 +15,9 @@ class ProjectController extends Controller
     public function index()
     {
         //
+        $tasks = Task::with('project')->get();
 
-        return response()->json(Project::all()); 
+        return response()->json($tasks, 200);   
     }
 
     /**
@@ -25,10 +26,11 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         //
-
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'project_id' => 'required|exists:projects,id',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'status' => 'required|in:pending,in_progress,completed',  
             'due_date' => 'nullable|date',
         ]);
 
@@ -46,12 +48,12 @@ class ProjectController extends Controller
     public function show(string $id)
     {
         //
-        $project = Project::find($id);
-        if (!$project) {
-            return response()->json(['message' => 'Project not found'], 404);
+         $task = Task::find($id);
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
         }   
 
-        return response()->json($project, 201);
+        return response()->json($task, 201);
     }
 
     /**
@@ -61,14 +63,17 @@ class ProjectController extends Controller
     {
         //
 
-         $project = Project::find($id);
-        if (!$project) {
-            return response()->json(['message' => 'Project not found'], 404);
+        
+         $task = Task::find($id);
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'project_id' => 'required|exists:projects,id',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'status' => 'required|in:pending,in_progress,completed',
             'due_date' => 'nullable|date',
         ]);
                  
@@ -76,14 +81,15 @@ class ProjectController extends Controller
             return response()->json(['errors' => $validator->errors()], 400);
         }   
 
-        $project-> name = $request-> name;
-        $project-> description = $request-> description;
-        $project-> due_date = $request-> due_date; 
+        $task-> project_id = $request-> project_id;
+        $task-> title = $request-> title;
+        $task-> description = $request-> description;
+        $task-> status = $request-> status;
+        $task-> due_date = $request-> due_date; 
 
-        $project->save();
+        $task->save();
 
-        return response()->json($project, 201);
-
+        return response()->json($task, 201);
     }
 
     /**
@@ -92,11 +98,16 @@ class ProjectController extends Controller
     public function destroy(string $id)
     {
         //
-        $project = Project::find($id);
-        if (!$project) {
-            return response()->json(['message' => 'Project not found'], 404);   
-        }
-        $project->delete();
-        return response()->json(['message' => 'Project deleted successfully'], 201);        
+
+            $task = Task::find($id);
+
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
+
+    }
+    
+        $task->delete();
+
+        return response()->json(['message' => 'Task deleted successfully'], 200);
     }
 }
